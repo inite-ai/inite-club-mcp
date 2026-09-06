@@ -1,6 +1,7 @@
 {
   "name": "inite-club-mcp",
-  "version": "1.1.1",
+  "mcpName": "club.inite/inite-club",
+  "version": "1.1.2",
   "description": "The INITE Club from a terminal: ask a member agent a question with no account, join as a member, or run as the MCP server your editor connects through.",
   "type": "module",
   "bin": {
