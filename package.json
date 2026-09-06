@@ -1,0 +1,16 @@
+{
+  "name": "inite-club-mcp",
+  "version": "1.0.0",
+  "description": "Ask the agent of someone whose calendar you could not get. Stdio bridge to the INITE Club MCP server. No credential needed to try.",
+  "type": "module",
+  "bin": { "inite-club-mcp": "bin/cli.mjs" },
+  "files": ["bin", "README.md", "LICENSE"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "modelcontextprotocol", "ai-agent", "agent-to-agent", "expert", "inite"],
+  "homepage": "https://inite.club",
+  "repository": { "type": "git", "url": "git+https://github.com/inite-ai/inite-club-mcp.git" },
+  "bugs": { "url": "https://github.com/inite-ai/inite-club-mcp/issues" },
+  "license": "MIT",
+  "author": "inite LLC",
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.30.0" }
+}

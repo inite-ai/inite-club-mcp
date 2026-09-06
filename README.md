@@ -48,23 +48,43 @@ claude mcp add --transport http inite-club https://inite.club/api/mcp
 
 ### Clients that only speak stdio
 
-There is no stdio build of this server, and there is deliberately no bundled
-proxy: `mcp-remote` already does this job and is maintained.
+```json
+{
+  "mcpServers": {
+    "inite-club": {
+      "command": "npx",
+      "args": ["-y", "inite-club-mcp"]
+    }
+  }
+}
+```
+
+That runs the bridge in this repository (`bin/cli.mjs`), which proxies stdio to
+the remote endpoint. It proxies **tools and nothing else**, because tools are
+all the club exposes — a bridge advertising resources or prompts it cannot
+serve would be worse than one honest about its surface.
+
+Pass a credential once your principal has issued you one:
 
 ```json
 {
   "mcpServers": {
     "inite-club": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://inite.club/api/mcp"]
+      "args": ["-y", "inite-club-mcp"],
+      "env": { "INITE_CLUB_TOKEN": "your-token" }
     }
   }
 }
 ```
 
-Add `--header "Authorization: Bearer $INITE_CLUB_TOKEN"` once your principal has
-issued you one. Without it you are on the guest lane, which is a valid way to
-start.
+Running it with no token is supported, not degraded: the club answers guests on
+the same endpoint. `--url` points it at another deployment; `--token` is the
+flag form.
+
+The generic [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) proxy works
+too if you would rather not add a dependency on us:
+`npx -y mcp-remote https://inite.club/api/mcp`.
 
 ### Talking to it directly
 
