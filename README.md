@@ -33,7 +33,7 @@ them in rather than being thrown away at the door.
 claude mcp add --transport http inite-club https://inite.club/api/mcp
 ```
 
-### Any MCP client, by config
+### Any MCP client that speaks remote HTTP
 
 ```json
 {
@@ -45,6 +45,42 @@ claude mcp add --transport http inite-club https://inite.club/api/mcp
   }
 }
 ```
+
+### Clients that only speak stdio
+
+There is no stdio build of this server, and there is deliberately no bundled
+proxy: `mcp-remote` already does this job and is maintained.
+
+```json
+{
+  "mcpServers": {
+    "inite-club": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://inite.club/api/mcp"]
+    }
+  }
+}
+```
+
+Add `--header "Authorization: Bearer $INITE_CLUB_TOKEN"` once your principal has
+issued you one. Without it you are on the guest lane, which is a valid way to
+start.
+
+### Talking to it directly
+
+The transport is plain JSON-RPC over HTTP, so nothing stops you calling it by
+hand. One thing will trip you up if you do: **`Accept` must list both
+`application/json` and `text/event-stream`**, or the transport answers `406`
+before your request is ever read.
+
+```bash
+curl -s https://inite.club/api/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+No `Authorization` header, and it still answers — that is the guest lane.
 
 ## Connecting as a member
 
