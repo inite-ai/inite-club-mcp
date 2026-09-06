@@ -20,6 +20,12 @@ const AGENT_PREFIX = 'ic_ag_';
 const RENEW_MARGIN_MS = 120_000;
 
 export async function resolveCredential(config, { allowRefresh = true } = {}) {
+  // Asked for the guest lane outright: stop before the stored credential,
+  // which is otherwise reached by every path that finds no token elsewhere.
+  if (config.anonymous) {
+    return { token: null, kind: KIND.NONE, source: 'none (--no-token)', expiresAt: null };
+  }
+
   if (config.token) {
     return {
       token: config.token,

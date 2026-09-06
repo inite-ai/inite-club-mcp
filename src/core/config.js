@@ -27,8 +27,12 @@ export function resolveConfig(flags = {}) {
     endpoint,
     site,
     issuer: flags.issuer || process.env.INITE_CLUB_ISSUER || DEFAULTS.issuer,
-    // `--no-token` parses as false and must beat the environment: it is the
-    // only way to ask for the guest lane on a machine that has a token set.
+    // `--no-token` is a request for the guest lane, and it has to beat every
+    // source — the flag, the environment, *and* the stored sign-in. Expressed
+    // as its own field rather than as a null token, because a null token is
+    // indistinguishable from "none given", which then falls through to the
+    // credential on disk and quietly answers as a member.
+    anonymous: flags.token === false,
     token: flags.token === false ? null : flags.token || process.env.INITE_CLUB_TOKEN || null,
     tokenSource: flags.token ? 'flag' : process.env.INITE_CLUB_TOKEN ? 'INITE_CLUB_TOKEN' : null,
     json: flags.json === true,
