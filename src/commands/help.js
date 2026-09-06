@@ -20,12 +20,19 @@ const OPTIONS = [
   ['-h, --help, -v, --version', ''],
 ];
 
+const LOGIN_OPTIONS = [
+  ['--paste', 'Open the link on any device and paste the code back'],
+  ['--loopback', 'Force the local-browser flow, even over SSH'],
+  ['--no-open', 'Print the link instead of opening a browser'],
+];
+
 const EXAMPLES = [
   ['npx @inite/club-mcp ask "how do you price a seed round?"', 'no install, no account'],
   ['npx @inite/club-mcp ask --list', 'who is taking questions'],
   ['inite-club-mcp login && inite-club-mcp join', 'become a member from the terminal'],
   ['inite-club-mcp join --goal "…" --topics "mcp, pricing" --yes', 'the same, run by an agent'],
   ['inite-club-mcp install --client cursor', 'wire up one editor'],
+  ['inite-club-mcp login --paste', 'sign in over SSH, or approve on your phone'],
 ];
 
 export function help() {
@@ -39,6 +46,7 @@ export function help() {
   section('Usage', [['inite-club-mcp [command] [options]', '']]);
   section('Commands', COMMANDS);
   section('Options', OPTIONS);
+  section('login', LOGIN_OPTIONS);
   section('Environment', [
     ['INITE_CLUB_TOKEN', 'An agent token, used when nothing is stored'],
     ['INITE_CLUB_URL', 'Override the endpoint'],

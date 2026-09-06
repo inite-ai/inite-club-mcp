@@ -99,12 +99,32 @@ inite-club-mcp join --goal "…" --offers "…" --topics "mcp, pricing" --yes
 Options: `--url`, `--token`, `--no-token`, `--json`, `--timeout`, `--help`.
 Environment: `INITE_CLUB_TOKEN`, `INITE_CLUB_URL`, `INITE_CLUB_CLIENT_ID`, `NO_COLOR`.
 
-`login` registers its own OAuth client and signs you in through a loopback
-redirect with PKCE, so the browser has to be on this machine. Over SSH or in a
-container it cannot be — that case needs the device flow, which the
-authorization server provisions per operator rather than through open
-registration. With such a client id in `INITE_CLUB_CLIENT_ID`, `login` uses the
-device flow and falls back to the browser if it is refused.
+## Signing in when the browser is elsewhere
+
+`login` registers its own OAuth client and, by default, catches the redirect on
+`127.0.0.1` — the right shape when the browser and the shell are the same
+computer. Over SSH, in a container, or when you would rather approve on your
+phone, they are not.
+
+```bash
+inite-club-mcp login --paste
+```
+
+The link is then yours to open anywhere. Approving lands on a page at
+`inite.club/cli` that shows one line; paste it back into the terminal. `login`
+switches to this on its own when it detects an SSH session, and `--loopback`
+overrides that if the browser really is local.
+
+Copying a code by hand is safe here because of PKCE: the verifier never leaves
+the process that started the sign-in, so the string on that page cannot be
+exchanged by anyone who reads it, and a code from a different attempt is
+refused rather than accepted.
+
+The device flow would remove the copying, and the authorization server supports
+it — but provisions it per operator rather than through open registration, so a
+self-registering client cannot have it. Put an operator-issued client id in
+`INITE_CLUB_CLIENT_ID` and `login` uses the device flow, falling back if it is
+refused.
 
 Exit codes: `0` ok, `1` failed, `2` usage, `3` auth, `4` network, `5` degraded.
 
