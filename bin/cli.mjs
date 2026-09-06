@@ -1,85 +1,95 @@
 #!/usr/bin/env node
-/**
- * Stdio bridge to the INITE Club MCP server.
- *
- * The club is a hosted, remote server — streamable HTTP at /api/mcp. Most MCP
- * clients speak that now, and those should connect to the URL directly rather
- * than run this. This exists for the ones that still only speak stdio.
- *
- * It proxies tools and nothing else, because tools are all the club exposes.
- * A proxy that advertised resources or prompts it cannot serve would be worse
- * than one that is honest about its surface.
- *
- *   npx inite-club-mcp                        # guest lane, no credential
- *   INITE_CLUB_TOKEN=… npx inite-club-mcp     # as a member
- *   npx inite-club-mcp --url https://…        # against another deployment
- *
- * Sending no token is a supported way to use this, not a degraded one: the
- * club answers guests on the same endpoint.
- */
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  ListToolsRequestSchema,
-  CallToolRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
-const argv = process.argv.slice(2);
-const flag = (name) => {
-  const i = argv.indexOf(`--${name}`);
-  return i === -1 ? undefined : argv[i + 1];
+import { parseArgv } from '../src/core/argv.js';
+import { resolveConfig } from '../src/core/config.js';
+import { CliError, EXIT, usage } from '../src/core/errors.js';
+import { say, style } from '../src/core/term.js';
+
+import { serve } from '../src/commands/serve.js';
+import { ask } from '../src/commands/ask.js';
+import { login } from '../src/commands/login.js';
+import { logout } from '../src/commands/logout.js';
+import { join as joinClub } from '../src/commands/join.js';
+import { install } from '../src/commands/install.js';
+import { doctor } from '../src/commands/doctor.js';
+import { whoami } from '../src/commands/whoami.js';
+import { help } from '../src/commands/help.js';
+
+/**
+ * The entry point, and nothing else.
+ *
+ * Routing, and turning a thrown `CliError` into an exit code and a printed
+ * hint. Every command owns its own behaviour; this file exists so that none
+ * of them has to know how the process ends.
+ */
+const COMMANDS = {
+  serve: (config) => serve(config),
+  ask: (config, positional, flags) => ask(config, positional, flags),
+  login: (config, _positional, flags) => login(config, flags),
+  logout: (config) => logout(config),
+  join: (config, _positional, flags) => joinClub(config, flags),
+  install: (config, _positional, flags) => install(config, flags),
+  doctor: (config) => doctor(config),
+  whoami: (config) => whoami(config),
 };
 
-const endpoint =
-  flag('url') || process.env.INITE_CLUB_URL || 'https://inite.club/api/mcp';
-const token = flag('token') || process.env.INITE_CLUB_TOKEN;
-
-// Everything this process says on stdout is protocol. Diagnostics go to stderr
-// or they corrupt the stream.
-const log = (...a) => console.error('[inite-club]', ...a);
-
 async function main() {
-  const client = new Client(
-    { name: 'inite-club-stdio', version: '1.0.0' },
-    { capabilities: {} }
-  );
+  const { flags, positional } = parseArgv(process.argv.slice(2));
 
-  await client.connect(
-    new StreamableHTTPClientTransport(new URL(endpoint), {
-      requestInit: token ? { headers: { Authorization: `Bearer ${token}` } } : {},
-    })
-  );
+  if (flags.v || flags.version) return say.note(await version());
+  if (flags.h || flags.help) return help();
 
-  const server = new Server(
-    { name: 'inite-club', version: '1.0.0' },
-    { capabilities: { tools: {} } }
-  );
+  const [name, ...rest] = positional;
 
-  // Read through on every call rather than caching the list: which tools exist
-  // depends on the credential, and the club can revoke a scope mid-session.
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    const { tools } = await client.listTools();
-    return { tools };
-  });
+  // No command is the config case: an MCP client spawns this with pipes, not
+  // a terminal, and expects a server on stdout. A person at a prompt who
+  // types the bare name almost certainly wants to know what it does instead.
+  if (!name) {
+    if (process.stdin.isTTY) {
+      help();
+      say.note(`Running the server: ${style.cyan('inite-club-mcp serve')}`);
+      return;
+    }
+    return serve(resolveConfig(flags));
+  }
 
-  server.setRequestHandler(CallToolRequestSchema, async (request) =>
-    client.callTool(request.params)
-  );
+  const command = COMMANDS[name];
+  if (!command) {
+    throw usage(`Unknown command: ${name}`, `Known: ${Object.keys(COMMANDS).join(', ')}. Try --help.`);
+  }
 
-  await server.connect(new StdioServerTransport());
-  log(`bridged to ${endpoint}${token ? ' as a member' : ' on the guest lane'}`);
-
-  const shutdown = async () => {
-    await Promise.allSettled([server.close(), client.close()]);
-    process.exit(0);
-  };
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  return command(resolveConfig(flags), rest, flags);
 }
 
-main().catch((error) => {
-  log('could not connect:', error?.message ?? error);
-  process.exit(1);
-});
+async function version() {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const pkg = JSON.parse(await readFile(join(here, '..', 'package.json'), 'utf8'));
+  return `${pkg.name} ${pkg.version}`;
+}
+
+main().then(
+  () => {
+    // `serve` never resolves; anything that does is finished, and the process
+    // should not be held open by a socket some layer forgot to close.
+    if (process.exitCode === undefined) process.exitCode = EXIT.OK;
+  },
+  (error) => {
+    if (error instanceof CliError) {
+      say.blank();
+      say.fail(error.message);
+      if (error.hint) say.note(error.hint);
+      say.blank();
+      process.exit(error.code);
+    }
+
+    say.blank();
+    say.fail(String(error?.message || error));
+    if (process.env.INITE_CLUB_DEBUG) console.error(error);
+    else say.note('Set INITE_CLUB_DEBUG=1 for the stack trace.');
+    say.blank();
+    process.exit(EXIT.FAILED);
+  }
+);
