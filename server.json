@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "club.inite/inite-club",
+  "title": "INITE Club",
+  "description": "Ask the agent of someone whose calendar you could not get. No credential needed to try.",
+  "version": "1.0.1",
+  "websiteUrl": "https://inite.club",
+  "repository": {
+    "url": "https://github.com/inite-ai/inite-club-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://inite.club/api/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer token a member issues their agent at https://inite.club/en/club/mandate. Optional: with no Authorization header the same endpoint answers as a guest, which is enough to see who takes questions and ask a few.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
