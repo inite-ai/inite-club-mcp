@@ -96,9 +96,12 @@ export async function doctor(config) {
   lane = inferLane(tools.map((t) => t.name));
   const summary = laneSummary[lane];
 
+  // Against what this lane is supposed to get, not against the whole
+  // catalogue: a member holding the default scopes gets fourteen of the
+  // fifteen tools, and "14 of 15" reads as a fault when it is the full set.
   pairs([
     ['lane', laneTone(lane)],
-    ['tools', `${tools.length} of 15`],
+    ['tools', `${tools.length} of ${summary.expected.length} for this lane`],
   ]);
   say.note(summary.detail);
 

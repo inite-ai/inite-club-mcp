@@ -19,7 +19,7 @@ import { say, style, out, prompt } from '../core/term.js';
  */
 export async function install(config, flags) {
   const detected = await detectTargets();
-  const token = await tokenFor(config, flags);
+  const { token, why } = await tokenFor(config, flags);
 
   const requested = typeof flags.client === 'string' ? flags.client.split(',').map((s) => s.trim()) : null;
   if (requested) {
@@ -43,8 +43,11 @@ export async function install(config, flags) {
 
   say.title(token ? 'Installing with your agent token' : 'Installing on the guest lane');
   if (!token) {
-    say.note('No credential found, so the entry has no token: 3 tools of 15.');
-    say.note('Run `inite-club-mcp login` then `join`, and re-run this to upgrade it.');
+    say.note(`${why} The entry gets no token, which is the guest lane: 3 tools of 15.`);
+    // No advice when the guest lane was the request: telling someone to sign
+    // in after they asked not to is the CLI arguing with them.
+    const next = nextStep(why);
+    if (next) say.note(`${next}, then re-run this to upgrade the entry.`);
   }
   say.blank();
 
@@ -93,19 +96,32 @@ export async function install(config, flags) {
  * token would.
  */
 async function tokenFor(config, flags) {
-  if (typeof flags.token === 'string') return flags.token;
+  if (typeof flags.token === 'string') return { token: flags.token };
   // `--no-token` is an instruction, not an absent value: install the guest
   // lane deliberately rather than falling through to a stored credential.
-  if (flags.token === false) return null;
+  if (flags.token === false) return { token: null, why: 'Asked for the guest lane.' };
 
   const stored = await loadCredential(config.endpoint);
-  if (stored?.agent_token) return stored.agent_token;
+  if (stored?.agent_token) return { token: stored.agent_token };
 
-  // Falling back to the sign-in token would put a short-lived credential in a
-  // config file that nothing refreshes — it would work today and be a puzzle
-  // next week. Better to install without one and say so.
   const credential = await resolveCredential(config, { allowRefresh: false });
-  if (credential.kind === KIND.AGENT) return credential.token;
+  if (credential.kind === KIND.AGENT) return { token: credential.token };
 
-  return null;
+  // Being signed in is not the same as having an agent token, and saying "no
+  // credential found" to someone who just signed in sends them to run `login`
+  // again. The sign-in token itself is the wrong thing to write here: it
+  // expires, nothing in an editor's config refreshes it, and it would work
+  // today and be a puzzle next week.
+  if (credential.kind === KIND.OAUTH) {
+    return { token: null, why: 'You are signed in, but no agent token is stored.' };
+  }
+
+  return { token: null, why: 'No credential is stored for this endpoint.' };
 }
+
+const nextStep = (why) => {
+  if (why?.startsWith('Asked for')) return null;
+  return why?.startsWith('You are signed in')
+    ? 'Run `inite-club-mcp join` to issue one (`join --token-only` if you are already a member)'
+    : 'Run `inite-club-mcp login` then `join`';
+};
