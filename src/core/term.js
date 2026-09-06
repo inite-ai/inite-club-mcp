@@ -58,13 +58,26 @@ export function pairs(rows) {
  * is worse than one that exits saying it needed an answer.
  */
 export async function prompt(question, { default: fallback = '' } = {}) {
-  if (!process.stdin.isTTY) return fallback;
   const { createInterface } = await import('node:readline/promises');
   const rl = createInterface({ input: process.stdin, output: stderr });
+
   try {
     const hint = fallback ? style.dim(` (${fallback})`) : '';
-    const answer = (await rl.question(`  ${question}${hint}: `)).trim();
-    return answer || fallback;
+
+    // Answered, or stdin ended without one. `rl.question` neither resolves
+    // nor rejects on EOF — it simply never settles, and the process then
+    // exits when the event loop empties, halfway through whatever it was
+    // doing. Racing the interface's own close event turns that into the
+    // default it should have been. Reading a piped answer rather than
+    // refusing outright is what makes `login --paste` scriptable.
+    const answer = await Promise.race([
+      rl.question(`  ${question}${hint}: `),
+      new Promise((resolve) => rl.once('close', () => resolve(null))),
+    ]);
+
+    return answer == null ? fallback : answer.trim() || fallback;
+  } catch {
+    return fallback;
   } finally {
     rl.close();
   }
