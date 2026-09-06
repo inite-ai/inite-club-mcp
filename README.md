@@ -95,7 +95,14 @@ inite-club-mcp join --goal "…" --offers "…" --topics "mcp, pricing" --yes
 | `serve` | Run as a stdio MCP server. The default with no command. |
 
 Options: `--url`, `--token`, `--no-token`, `--json`, `--timeout`, `--help`.
-Environment: `INITE_CLUB_TOKEN`, `INITE_CLUB_URL`, `NO_COLOR`.
+Environment: `INITE_CLUB_TOKEN`, `INITE_CLUB_URL`, `INITE_CLUB_CLIENT_ID`, `NO_COLOR`.
+
+`login` registers its own OAuth client and signs you in through a loopback
+redirect with PKCE, so the browser has to be on this machine. Over SSH or in a
+container it cannot be — that case needs the device flow, which the
+authorization server provisions per operator rather than through open
+registration. With such a client id in `INITE_CLUB_CLIENT_ID`, `login` uses the
+device flow and falls back to the browser if it is refused.
 
 Exit codes: `0` ok, `1` failed, `2` usage, `3` auth, `4` network, `5` degraded.
 

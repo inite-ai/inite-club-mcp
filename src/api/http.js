@@ -50,8 +50,14 @@ export async function requestOk(url, options = {}) {
   const res = await request(url, options);
   if (res.ok) return res;
 
+  // `error` before `message` was the wrong order: OAuth puts the useful text
+  // in `error_description`, but this API puts a full sentence in `message`
+  // and the bare status name in `error` — so preferring `error` printed
+  // "Bad Request" over an explanation the server had already written.
   const detail =
-    (res.body && typeof res.body === 'object' && (res.body.error_description || res.body.error || res.body.message)) ||
+    (res.body &&
+      typeof res.body === 'object' &&
+      (res.body.error_description || res.body.message || res.body.error)) ||
     (typeof res.body === 'string' && res.body.slice(0, 200)) ||
     `HTTP ${res.status}`;
 

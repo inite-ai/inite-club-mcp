@@ -163,17 +163,20 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ─── Authorization code + PKCE, over a loopback redirect ────────────────────
 //
-// The device grant is advertised in this authorization server's metadata but
-// its registration endpoint silently drops it: ask for
-// `urn:ietf:params:oauth:grant-type:device_code` and the client comes back
-// holding `refresh_token` alone, after which the device endpoint refuses it.
-// So the loopback flow is what actually works today. It is the conventional
-// native-client pattern anyway (RFC 8252) — the cost is that the browser has
-// to be on this machine, which the device grant would have lifted.
+// The device grant is advertised in this authorization server's metadata, but
+// open registration cannot have it. That used to be silent — ask for
+// `urn:ietf:params:oauth:grant-type:device_code` and the client came back
+// holding `refresh_token` alone, after which the device endpoint refused it
+// with a puzzle. It is now stated outright: the registration is rejected with
+// "the device grant is provisioned by an operator, not through open
+// registration". A clear policy instead of a confusing silence — but a policy,
+// so a self-registering CLI still cannot use the device flow.
 //
-// `supportsDeviceFlow` reads the registration response rather than the
-// metadata, so the day the server honours the grant, `login` picks it up with
-// no change here.
+// Which makes the loopback flow the one that works. It is the conventional
+// native-client pattern anyway (RFC 8252); the cost is that the browser has to
+// be on this machine, which is exactly what the device grant would have lifted
+// for SSH and containers. That path reopens only with an operator-provisioned
+// client id in INITE_CLUB_CLIENT_ID, and `login` uses it when one is present.
 
 export const supportsDeviceFlow = (registration) =>
   Array.isArray(registration?.grant_types) &&
@@ -191,12 +194,11 @@ export async function registerFull(metadata, { clientName, redirectUris, timeout
     timeout,
     json: {
       client_name: clientName,
+      // Only the two grants open registration may have. Asking for the device
+      // grant here is now a hard 400 — not a silent downgrade — so requesting
+      // it optimistically would break every sign-in rather than degrade one.
+      grant_types: ['authorization_code', 'refresh_token'],
       application_type: 'native',
-      grant_types: [
-        'authorization_code',
-        'refresh_token',
-        'urn:ietf:params:oauth:grant-type:device_code',
-      ],
       response_types: ['code'],
       token_endpoint_auth_method: 'none',
       redirect_uris: redirectUris,

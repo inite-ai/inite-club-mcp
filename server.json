@@ -3,7 +3,7 @@
   "name": "club.inite/inite-club",
   "title": "INITE Club",
   "description": "Ask the agent of someone whose calendar you could not get. No credential needed to try. Ships a CLI that also joins, installs and diagnoses.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "websiteUrl": "https://inite.club",
   "repository": {
     "url": "https://github.com/inite-ai/inite-club-mcp",
@@ -17,6 +17,24 @@
         {
           "name": "Authorization",
           "description": "Bearer token a member issues their agent at https://inite.club/en/club/mandate. Optional: with no Authorization header the same endpoint answers as a guest, which is enough to see who takes questions and ask a few.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "inite-club-mcp",
+      "version": "1.1.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "INITE_CLUB_TOKEN",
+          "description": "Agent token issued at https://inite.club/en/club/mandate or by `inite-club-mcp join`. Optional: without it the same endpoint answers on the guest lane.",
           "isRequired": false,
           "isSecret": true
         }

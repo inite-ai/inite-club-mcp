@@ -42,18 +42,34 @@ export async function login(config, flags) {
   const metadata = await discover(config.issuer, { timeout: config.timeout });
   const redirectUris = CALLBACK_PORTS.map((p) => `http://127.0.0.1:${p}${CALLBACK_PATH}`);
 
-  const registration = process.env.INITE_CLUB_CLIENT_ID
-    ? { client_id: process.env.INITE_CLUB_CLIENT_ID, grant_types: ['authorization_code', 'refresh_token'] }
+  // An operator-provisioned client is the only kind that can hold the device
+  // grant, and its grants are not discoverable from here — there is no
+  // registration response to read. So it is tried, and a refusal falls back
+  // rather than failing: the loopback flow works for either kind of client.
+  const provisioned = process.env.INITE_CLUB_CLIENT_ID;
+  const registration = provisioned
+    ? { client_id: provisioned, operatorProvisioned: true }
     : await registerFull(metadata, {
         clientName: DEFAULTS.clientName,
         redirectUris,
         timeout: config.timeout,
       });
 
-  const grant =
-    supportsDeviceFlow(registration) && flags.loopback !== true
-      ? await viaDeviceCode(config, metadata, registration, flags)
-      : await viaLoopback(config, metadata, registration, flags);
+  const mayUseDevice =
+    flags.loopback !== true &&
+    (supportsDeviceFlow(registration) || registration.operatorProvisioned);
+
+  let grant = null;
+  if (mayUseDevice) {
+    grant = await viaDeviceCode(config, metadata, registration, flags).catch((error) => {
+      say.warn('This client cannot use the device flow — falling back to the browser.');
+      say.note(error.message);
+      say.blank();
+      return null;
+    });
+  }
+
+  grant ??= await viaLoopback(config, metadata, registration, flags);
 
   await saveCredential(config.endpoint, {
     issuer: metadata.issuer || config.issuer,
