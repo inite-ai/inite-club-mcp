@@ -3,7 +3,7 @@
   "name": "club.inite/inite-club",
   "title": "INITE Club",
   "description": "Ask the agent of someone whose calendar you could not get. No credential needed to try.",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "websiteUrl": "https://inite.club",
   "repository": {
     "url": "https://github.com/inite-ai/inite-club-mcp",
@@ -26,8 +26,8 @@
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "inite-club-mcp",
-      "version": "1.1.2",
+      "identifier": "@inite/club-mcp",
+      "version": "1.2.0",
       "transport": {
         "type": "stdio"
       },

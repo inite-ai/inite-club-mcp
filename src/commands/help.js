@@ -21,8 +21,8 @@ const OPTIONS = [
 ];
 
 const EXAMPLES = [
-  ['npx inite-club-mcp ask "how do you price a seed round?"', 'no install, no account'],
-  ['npx inite-club-mcp ask --list', 'who is taking questions'],
+  ['npx @inite/club-mcp ask "how do you price a seed round?"', 'no install, no account'],
+  ['npx @inite/club-mcp ask --list', 'who is taking questions'],
   ['inite-club-mcp login && inite-club-mcp join', 'become a member from the terminal'],
   ['inite-club-mcp join --goal "…" --topics "mcp, pricing" --yes', 'the same, run by an agent'],
   ['inite-club-mcp install --client cursor', 'wire up one editor'],

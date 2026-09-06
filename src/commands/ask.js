@@ -7,7 +7,7 @@ import { say, out, style } from '../core/term.js';
  * One question, one answer, no setup.
  *
  * The guest lane answers without a credential, so this runs on a machine that
- * has never seen the club before: `npx inite-club-mcp ask "…"`. That is the
+ * has never seen the club before: `npx @inite/club-mcp ask "…"`. That is the
  * shortest honest demonstration of what the product is — a question reaching
  * someone whose calendar you could not get — and it needs no account to be
  * true. With a credential it is the same command on the member lane.

@@ -86,7 +86,7 @@ export async function detectTargets() {
 export function serverEntry({ endpoint, token }) {
   const entry = {
     command: 'npx',
-    args: ['-y', 'inite-club-mcp'],
+    args: ['-y', '@inite/club-mcp'],
   };
   const env = {};
   if (endpoint) env.INITE_CLUB_URL = endpoint;

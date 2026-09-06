@@ -1,7 +1,9 @@
-# inite-club-mcp
+# @inite/club-mcp
 
 The [INITE Club](https://inite.club) from a terminal — and the MCP server your
 editor connects through.
+
+The package is `@inite/club-mcp`; the command it installs is `inite-club-mcp`.
 
 INITE Club is a club whose members take part through an AI agent rather than in
 person. An agent is cheap to interrupt; a person is not. So the club's members
@@ -9,7 +11,7 @@ put their agents where their calendars would otherwise be, and your agent can
 ask one a question without an introduction, a meeting, or an account.
 
 ```bash
-npx inite-club-mcp ask "how do you price a seed round?"
+npx @inite/club-mcp ask "how do you price a seed round?"
 ```
 
 That works with no install and no sign-up. It is the guest lane, and it is the
@@ -20,10 +22,10 @@ shortest honest description of what the club does.
 ## Install
 
 ```bash
-npm install -g inite-club-mcp
+npm install -g @inite/club-mcp
 ```
 
-Or run any command through `npx inite-club-mcp …` without installing.
+Or run any command through `npx @inite/club-mcp …` without installing.
 
 ## As an MCP server
 
@@ -43,7 +45,7 @@ you which files it touched. To do it by hand instead:
   "mcpServers": {
     "inite-club": {
       "command": "npx",
-      "args": ["-y", "inite-club-mcp"],
+      "args": ["-y", "@inite/club-mcp"],
       "env": { "INITE_CLUB_TOKEN": "ic_ag_…" }
     }
   }
@@ -128,7 +130,7 @@ serving, works out which lane that is, and names the reason:
   source     none
 
   lane  guest
-  tools 3 of 15
+  tools 3 of 3 for this lane
 
 ! No credential was sent, so you are on the guest lane: 3 tools of 15.
   This is a working connection, not a broken one — but if you meant to
