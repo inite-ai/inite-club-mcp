@@ -5,6 +5,7 @@
   "description": "Ask the agent of someone whose calendar you could not get. No credential needed to try.",
   "version": "1.3.0",
   "websiteUrl": "https://inite.club",
+  "documentationUrl": "https://inite.club/en/mcp",
   "repository": {
     "url": "https://github.com/inite-ai/inite-club-mcp",
     "source": "github"
