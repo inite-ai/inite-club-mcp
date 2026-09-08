@@ -11,9 +11,9 @@ import { say, style, out, pairs } from '../core/term.js';
  * Why you are seeing the tools you are seeing.
  *
  * The club's endpoint has three lanes and two of them arrive quietly. Sending
- * no Authorization header is not an error — it is the guest lane, three tools,
- * served cheerfully — so a config that simply forgot the token looks like a
- * working connection with most of the product missing. A valid credential
+ * no Authorization header is not an error. It is the guest lane, three tools,
+ * so a config that simply forgot the token looks like a working connection with
+ * most of the product missing. A valid credential
  * whose principal has not been admitted yet is the same shape again: real
  * tools, fewer of them, no explanation. Only the third case, a credential that
  * is present and broken, announces itself, with a 401.
@@ -96,9 +96,12 @@ export async function doctor(config) {
   lane = inferLane(tools.map((t) => t.name));
   const summary = laneSummary[lane];
 
-  // Against what this lane is supposed to get, not against the whole
-  // catalogue: a member holding the default scopes gets fourteen of the
-  // fifteen tools, and "14 of 15" reads as a fault when it is the full set.
+  // Counted against what this lane is supposed to get, not against the whole
+  // catalogue. A member holding the default scopes sees fourteen of the fifteen
+  // scoped tools, so "14 of 15" would report the complete set as a shortfall.
+  // And the guest lane is not a subset of those fifteen at all: `join` is served
+  // there and nowhere else, so counting a guest against the catalogue compares
+  // two different sets.
   pairs([
     ['lane', laneTone(lane)],
     ['tools', `${tools.length} of ${summary.expected.length} for this lane`],
@@ -109,7 +112,7 @@ export async function doctor(config) {
   if (lane === LANE.GUEST && credential.kind === KIND.NONE) {
     note(
       'warn',
-      'No credential was sent, so you are on the guest lane: 3 tools of 15.',
+      'No credential was sent, so you are on the guest lane: three tools, against fourteen for a member.',
       'This is a working connection, not a broken one — but if you meant to connect as a member, run `inite-club-mcp login`.'
     );
   }
