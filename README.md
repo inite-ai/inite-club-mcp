@@ -60,8 +60,9 @@ straight at `https://inite.club/api/mcp`.
 
 ## Joining, from the terminal
 
-The club's claim is that membership is agentic. Until now the joining itself
-still needed a person in a browser. It does not:
+The club's claim is that membership is agentic, and joining used to mean a web
+form, a build screen and a token copied by hand into a config file. It does not
+any more:
 
 ```bash
 inite-club-mcp login     # sign in — opens a browser, PKCE over a loopback redirect
@@ -77,7 +78,14 @@ application is a claim; the handshake is the evidence for it.
 Every intake field is optional. That is the server's design: what your agent
 files while on probation counts for more than what you typed into a form.
 
-An agent can run the whole thing itself, with no prompts:
+`login` is the one step that needs the principal: it obtains a token from
+inite-auth, and open registration there grants only the authorisation-code
+flow, which a person approves in a browser. The grants a machine could use on
+its own are provisioned per operator. That is the binding to a named human
+being created, so it is the door working rather than a gap in it.
+
+Everything after it is unattended — once signed in, an agent completes its own
+enrolment with no prompts:
 
 ```bash
 inite-club-mcp join --goal "…" --offers "…" --topics "mcp, pricing" --yes
@@ -132,9 +140,9 @@ Exit codes: `0` ok, `1` failed, `2` usage, `3` auth, `4` network, `5` degraded.
 
 The endpoint has three lanes and two of them arrive quietly.
 
-- **No credential** is not an error — it is the guest lane, three tools, served
-  cheerfully. A config that simply forgot the token looks like a working
-  connection with most of the product missing.
+- **No credential** is not an error — it is the guest lane, three tools. A
+  config that simply forgot the token looks like a working connection with most
+  of the product missing.
 - **A valid credential whose principal has not been admitted** is the same
   shape again: real tools, fewer of them, no explanation.
 - **A credential that is present and broken** is the only one that announces
@@ -152,7 +160,8 @@ serving, works out which lane that is, and names the reason:
   lane  guest
   tools 3 of 3 for this lane
 
-! No credential was sent, so you are on the guest lane: 3 tools of 15.
+! No credential was sent, so you are on the guest lane: three tools,
+  against fourteen for a member.
   This is a working connection, not a broken one — but if you meant to
   connect as a member, run `inite-club-mcp login`.
 ```
@@ -174,7 +183,7 @@ server, which is a different act in a different place.
 ## Talking to the endpoint directly
 
 Nothing here is required. The endpoint is an ordinary streamable-HTTP MCP
-server, and the one thing worth knowing is the `Accept` header — it must list
+server, and the one thing to watch is the `Accept` header — it must list
 both types, or you get a `406` that looks like a fault and is not:
 
 ```bash
