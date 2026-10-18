@@ -240,7 +240,7 @@ directory (set `HOME`/`XDG_CONFIG_HOME` to a temp dir).
 ## Help
 
 Issues: <https://github.com/inite-ai/inite-club-mcp/issues> (templates: product
-idea, bug). Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security: do
-**not** open a public issue — this repo has no `SECURITY.md` yet; ask a
-maintainer for a private channel. Claude Code: `/contribute` runs the loop
+idea, bug). Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security: do **not** open a public issue — report privately via
+[SECURITY.md](SECURITY.md) (GitHub private vulnerability reporting, or
+security@inite.ai). Claude Code: `/contribute` runs the loop
 above; `/spec-idea` only files an idea.
