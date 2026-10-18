@@ -5,8 +5,6 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
@@ -20,22 +18,34 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const cli = fileURLToPath(new URL('../bin/cli.mjs', import.meta.url));
 
-/** A stateless streamable-HTTP MCP server that remembers who said hello. */
+/**
+ * The smallest streamable-HTTP MCP server that completes a handshake, and
+ * remembers who said hello. Written by hand rather than with the SDK's server
+ * transport, whose Node adapter does not run on the `engines` floor (18.17).
+ */
 async function standInClub() {
   const hellos = [];
   const http = createServer(async (req, res) => {
+    // No server-initiated stream: the client is told so and carries on.
+    if (req.method !== 'POST') return res.writeHead(405).end();
     let raw = '';
     for await (const chunk of req) raw += chunk;
-    const body = raw ? JSON.parse(raw) : undefined;
-    if (body?.method === 'initialize') hellos.push(body.params.clientInfo);
-    const server = new Server({ name: 'stand-in-club', version: '0.0.0' }, { capabilities: { tools: {} } });
-    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-    res.on('close', () => {
-      transport.close();
-      server.close();
-    });
-    await server.connect(transport);
-    await transport.handleRequest(req, res, body);
+    const message = JSON.parse(raw);
+    if (message.id === undefined) return res.writeHead(202).end();
+    const reply = { jsonrpc: '2.0', id: message.id };
+    if (message.method === 'initialize') {
+      hellos.push(message.params.clientInfo);
+      reply.result = {
+        protocolVersion: message.params.protocolVersion,
+        capabilities: { tools: {} },
+        serverInfo: { name: 'stand-in-club', version: '0.0.0' },
+      };
+    } else if (message.method === 'tools/list') {
+      reply.result = { tools: [] };
+    } else {
+      reply.error = { code: -32601, message: 'Method not found' };
+    }
+    res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(reply));
   });
   await new Promise((resolve) => http.listen(0, '127.0.0.1', resolve));
   const { port } = http.address();
