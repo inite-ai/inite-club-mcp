@@ -53,10 +53,10 @@ only forwards `tools/list` and `tools/call`, and mirrors the scope table in
    registry entry.
 6. **Versions move together.** `package.json` `version`, `server.json`
    `version` and `server.json` `packages[0].version` are all `1.3.0` today;
-   bump them in one commit. The MCP handshake and `--version` read the
+   release-please bumps all three in one commit (see Releasing). The MCP handshake and `--version` read the
    version from `package.json` (`src/core/version.js`) — never write it as a
-   literal elsewhere. Do not bump on a docs-only change. Never run
-   `npm publish` or the registry publisher — releases are a maintainer step.
+   literal elsewhere. Don't bump by hand. Never run `npm publish` or the
+   registry publisher yourself.
 7. **No new runtime dependencies** without asking. The package has exactly
    one (`@modelcontextprotocol/sdk`); `src/core/argv.js` exists to avoid a
    second. Don't commit `package-lock.json` (it is git-ignored on purpose).
@@ -187,7 +187,7 @@ The loop you run **with** the human (Claude Code: `/contribute` runs it):
 7. Update `README.md` and `help.js` wherever behaviour or flags changed.
 8. Commit with conventional commits, as the history does:
    `fix(doctor): …`, `feat(login): …`, `docs: …`; `!` for a breaking change.
-   There is no release automation — versions are bumped by hand (rule 6).
+   The commit type decides the next version (see Releasing).
 9. Open a PR with the template filled, explaining the change to a
    non-engineer too.
 
@@ -226,6 +226,17 @@ with the built-in runner — `test/<module>.test.js` using `node:test` and
 [inite-visibility](https://github.com/inite-ai/inite-visibility/tree/main/test)
 do; `npm test` picks them up. Tests must not hit the network or the real home
 directory (set `HOME`/`XDG_CONFIG_HOME` to a temp dir).
+
+## Releasing
+
+release-please (`.github/workflows/release-please.yml`) reads the
+conventional commits on `main` and keeps a release PR open (`fix` → patch,
+`feat` → minor, `!` → major). Merging that PR bumps the three versions,
+writes `CHANGELOG.md`, tags `vX.Y.Z` and, in the same run, publishes to npm
+with provenance (`publish-npm.yml`) and then the MCP Registry
+(`publish-mcp-registry.yml`). Both skip a version that is already out, so
+dispatching release-please by hand publishes whatever `main` carries and a
+re-run is safe. Secrets: `NPM_TOKEN`, `MCP_REGISTRY_PRIVATE_KEY`.
 
 ## When to ask a human
 

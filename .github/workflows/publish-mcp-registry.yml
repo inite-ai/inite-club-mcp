@@ -1,0 +1,111 @@
+name: Publish to MCP Registry
+
+# server.json is the record the MCP Registry serves to every client that
+# discovers this server. Called by release-please.yml after the npm publish
+# (a GITHUB_TOKEN tag push cannot trigger this workflow by itself);
+# dispatchable by hand. Idempotent: an entry version the registry already
+# has is skipped, since the registry will not take the same version twice.
+#
+# The namespace is domain-verified (inite.club DNS TXT `v=MCPv1; k=ed25519`),
+# not io.github.inite-ai, so GitHub OIDC cannot authorize it: the login
+# signs with the domain's Ed25519 private key, held as the secret
+# MCP_REGISTRY_PRIVATE_KEY (hex, the form `mcp-publisher login dns` takes).
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to publish from (the release tag).
+        required: true
+        type: string
+    secrets:
+      MCP_REGISTRY_PRIVATE_KEY:
+        required: false
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to publish from (empty = the ref this run was dispatched on).
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      # package.json, server.json `version` and `packages[0].version` move
+      # together (AGENTS.md); release-please bumps all three. Asserted rather
+      # than assumed: a stale server.json would list a package that is not
+      # the one just published.
+      - name: Check server.json carries the package version
+        run: |
+          set -euo pipefail
+          PKG="$(jq -r .version package.json)"
+          ENTRY="$(jq -r .version server.json)"
+          LISTED="$(jq -r '.packages[0].version' server.json)"
+          if [ "$PKG" != "$ENTRY" ] || [ "$PKG" != "$LISTED" ]; then
+            echo "::error::package.json is $PKG but server.json says version=$ENTRY, packages[0].version=$LISTED"
+            exit 1
+          fi
+
+      - name: Is this entry already in the registry?
+        id: check
+        run: |
+          set -euo pipefail
+          NAME="$(jq -r .name server.json)"
+          VERSION="$(jq -r .version server.json)"
+          LISTED="$(curl -fsSL "https://registry.modelcontextprotocol.io/v0/servers?search=${NAME#*/}&limit=100" \
+            | jq -r --arg n "$NAME" --arg v "$VERSION" \
+                '[.servers[] | select(.server.name == $n and .server.version == $v)] | if length == 0 then empty else (.[0].server.packages[0].version // "none") end')"
+          if [ -n "$LISTED" ]; then
+            echo "::notice::$NAME $VERSION is already in the registry; nothing to publish."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publishing $NAME $VERSION"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install mcp-publisher
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Authenticate to the registry
+        if: steps.check.outputs.exists == 'false'
+        env:
+          MCP_REGISTRY_PRIVATE_KEY: ${{ secrets.MCP_REGISTRY_PRIVATE_KEY }}
+        run: |
+          if [ -z "${MCP_REGISTRY_PRIVATE_KEY:-}" ]; then
+            echo "::error::MCP_REGISTRY_PRIVATE_KEY is not set. Add the hex Ed25519 private key whose public half is in the inite.club DNS TXT record (v=MCPv1) as a repository or organization secret. npm is unaffected; re-run this job once the secret exists."
+            exit 1
+          fi
+          ./mcp-publisher login dns --domain inite.club --private-key "$MCP_REGISTRY_PRIVATE_KEY"
+
+      - name: Publish
+        if: steps.check.outputs.exists == 'false'
+        run: ./mcp-publisher publish
+
+      # Every version stays `active` until told otherwise, so a client
+      # browsing the registry could still pick an old entry. Mark everything
+      # but what was just published deprecated (listed, reversible).
+      - name: Deprecate older versions
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          CURRENT="$(jq -r .version server.json)"
+          NAME="$(jq -r .name server.json)"
+          curl -fsSL "https://registry.modelcontextprotocol.io/v0/servers?search=${NAME#*/}&limit=100" \
+            | jq -r --arg n "$NAME" --arg c "$CURRENT" \
+                '.servers[] | select(.server.name == $n and .server.version != $c) | .server.version' \
+            | sort -u \
+            | while read -r v; do
+                ./mcp-publisher status --status deprecated \
+                  --message "Superseded by $CURRENT" "$NAME" "$v" || echo "::warning::could not deprecate $v"
+              done
