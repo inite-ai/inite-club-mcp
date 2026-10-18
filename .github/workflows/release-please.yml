@@ -1,0 +1,61 @@
+name: release-please
+
+# Conventional commits on main → release-please keeps a release PR open →
+# merging it bumps the version, writes CHANGELOG.md and tags the release →
+# the jobs below publish that tag in the same run.
+#
+# The tag release-please pushes is made with GITHUB_TOKEN, which cannot
+# trigger another workflow's `push: tags` or `release: published`, so the
+# publish workflows are called from here rather than listening for the tag.
+#
+# `workflow_dispatch` publishes whatever version the dispatched ref carries,
+# release or not. Every publish step skips a version that is already out, so
+# a dispatch (or a re-run) never fails on, or duplicates, a published version.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        id: rp
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  npm:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/publish-npm.yml
+    with:
+      ref: ${{ needs.release-please.outputs.tag_name || github.ref }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    permissions:
+      contents: read
+      id-token: write
+
+  # After npm, because the registry checks that the npm package it points at
+  # exists and names this server in `mcpName`.
+  mcp-registry:
+    needs: [release-please, npm]
+    if: ${{ needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/publish-mcp-registry.yml
+    with:
+      ref: ${{ needs.release-please.outputs.tag_name || github.ref }}
+    secrets:
+      MCP_REGISTRY_PRIVATE_KEY: ${{ secrets.MCP_REGISTRY_PRIVATE_KEY }}
+    permissions:
+      contents: read
