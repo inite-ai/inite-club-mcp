@@ -53,7 +53,9 @@ only forwards `tools/list` and `tools/call`, and mirrors the scope table in
    registry entry.
 6. **Versions move together.** `package.json` `version`, `server.json`
    `version` and `server.json` `packages[0].version` are all `1.3.0` today;
-   bump them in one commit. Do not bump on a docs-only change. Never run
+   bump them in one commit. The MCP handshake and `--version` read the
+   version from `package.json` (`src/core/version.js`) — never write it as a
+   literal elsewhere. Do not bump on a docs-only change. Never run
    `npm publish` or the registry publisher — releases are a maintainer step.
 7. **No new runtime dependencies** without asking. The package has exactly
    one (`@modelcontextprotocol/sdk`); `src/core/argv.js` exists to avoid a
@@ -79,8 +81,8 @@ only forwards `tools/list` and `tools/call`, and mirrors the scope table in
 | `src/api/oauth.js`, `src/commands/login.js`, `src/domain/credential.js`, `src/core/store.js` | sign-in, token refresh, credential storage | red |
 | `package.json` (`name`, `bin`, `mcpName`, `files`, deps), `server.json` | npm + MCP Registry identity | red |
 
-Green: just do it. Yellow: needs a manual check recorded in the PR (there is
-no test suite yet — see Testing). Red: open an issue with a spec first
+Green: just do it. Yellow: needs a manual check recorded in the PR (the test
+suite is small — see Testing). Red: open an issue with a spec first
 (template "Product idea"); a maintainer approves the design before code.
 
 ## Setup
@@ -106,9 +108,10 @@ npm install                       # no lockfile is committed, so not `npm ci`
 npm run lint                      # node --check bin/cli.mjs
 node bin/cli.mjs --version        # loads every module: catches syntax/import errors in src/
 node bin/cli.mjs --help
+npm test                          # node --test test/*.test.js
 ```
 
-Done = all four green. Useful manual checks (network, no writes, no quota):
+Done = all five green. Useful manual checks (network, no writes, no quota):
 
 ```bash
 node bin/cli.mjs ask --list --no-token        # guest roster from the live club
@@ -118,7 +121,7 @@ node --check src/commands/<file>.js           # one file
 ```
 
 `node bin/cli.mjs serve` runs the bridge (it waits on stdin; a client
-launches it). There is no test, format or typecheck script.
+launches it). There is no format or typecheck script.
 
 ## Architecture map
 
@@ -155,8 +158,7 @@ with a hint on failure.
 value, and listed in `help.js` `OPTIONS`. A flag only one command uses is read
 from `flags` inside that command, as `ask.js` does with `--to`, `--topic` and
 `--list`, and listed in its own `help.js` section (see `LOGIN_OPTIONS`).
-Document both in the README. (Today `ask --to/--topic` are not in `--help` or
-the README — fix that if you touch `ask`.)
+Document both in the README.
 
 **Add or change an MCP tool:** not here — it lives in the club server. If the
 server's scope table changes, update `src/domain/lanes.js` and the README
@@ -206,7 +208,10 @@ The loop you run **with** the human (Claude Code: `/contribute` runs it):
 
 ## Testing
 
-There is no automated test suite yet. What protects the code today is
+The automated suite is `npm test` (`node --test test/*.test.js`, in CI):
+today one test, `test/version.test.js`, which runs the real bridge between an
+MCP client and a stand-in club on `127.0.0.1` and checks both handshakes report
+the `package.json` version. Beyond that, what protects the code is
 `node --check`, the `--version` load of every module, and manual checks
 against the live endpoint (read-only ones listed under Commands).
 
@@ -219,9 +224,8 @@ If you add pure logic (e.g. in `argv.js`, `config.js`, `lanes.js`), add tests
 with the built-in runner — `test/<module>.test.js` using `node:test` and
 `node:assert/strict`, as the sibling repos
 [inite-visibility](https://github.com/inite-ai/inite-visibility/tree/main/test)
-do — add `"test": "node --test test/*.test.js"` to `package.json`, and a
-`npm test` step to CI, in the same PR. Tests must not hit the network or the
-real home directory (set `HOME`/`XDG_CONFIG_HOME` to a temp dir).
+do; `npm test` picks them up. Tests must not hit the network or the real home
+directory (set `HOME`/`XDG_CONFIG_HOME` to a temp dir).
 
 ## When to ask a human
 

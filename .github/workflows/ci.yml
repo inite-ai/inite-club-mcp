@@ -28,6 +28,8 @@ jobs:
       # Importing every command proves each module in src/ parses and resolves.
       - run: node bin/cli.mjs --version
       - run: node bin/cli.mjs --help
+      # The handshake test runs the real bridge against a stand-in club on 127.0.0.1.
+      - run: npm test
 
   devcontainer:
     name: Devcontainer builds

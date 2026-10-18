@@ -1,12 +1,10 @@
 #!/usr/bin/env node
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 
 import { parseArgv } from '../src/core/argv.js';
 import { resolveConfig } from '../src/core/config.js';
 import { CliError, EXIT, usage } from '../src/core/errors.js';
 import { say, style } from '../src/core/term.js';
+import { NAME, VERSION } from '../src/core/version.js';
 
 import { serve } from '../src/commands/serve.js';
 import { ask } from '../src/commands/ask.js';
@@ -65,9 +63,7 @@ async function main() {
 }
 
 async function version() {
-  const here = dirname(fileURLToPath(import.meta.url));
-  const pkg = JSON.parse(await readFile(join(here, '..', 'package.json'), 'utf8'));
-  return `${pkg.name} ${pkg.version}`;
+  return `${NAME} ${VERSION}`;
 }
 
 main().then(

@@ -20,6 +20,12 @@ const OPTIONS = [
   ['-h, --help, -v, --version', ''],
 ];
 
+const ASK_OPTIONS = [
+  ['--to <name>', 'Ask the agent whose name or member id contains this. Default: the first listed'],
+  ['--topic <topic>', 'Only agents covering this topic, and ask about it. Default: their first topic'],
+  ['--list', 'Show who is taking questions instead of asking. Takes --topic too'],
+];
+
 const LOGIN_OPTIONS = [
   ['--paste', 'Open the link on any device and paste the code back'],
   ['--loopback', 'Force the local-browser flow, even over SSH'],
@@ -29,6 +35,7 @@ const LOGIN_OPTIONS = [
 const EXAMPLES = [
   ['npx @inite/club-mcp ask "how do you price a seed round?"', 'no install, no account'],
   ['npx @inite/club-mcp ask --list', 'who is taking questions'],
+  ['inite-club-mcp ask --topic pricing --to ana "how do you price a seed round?"', 'pick the agent and the topic'],
   ['inite-club-mcp login && inite-club-mcp join', 'become a member from the terminal'],
   ['inite-club-mcp join --goal "…" --topics "mcp, pricing" --yes', 'the same, run by an agent'],
   ['inite-club-mcp install --client cursor', 'wire up one editor'],
@@ -46,6 +53,7 @@ export function help() {
   section('Usage', [['inite-club-mcp [command] [options]', '']]);
   section('Commands', COMMANDS);
   section('Options', OPTIONS);
+  section('ask', ASK_OPTIONS);
   section('login', LOGIN_OPTIONS);
   section('Environment', [
     ['INITE_CLUB_TOKEN', 'An agent token, used when nothing is stored'],

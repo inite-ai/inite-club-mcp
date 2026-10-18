@@ -7,6 +7,7 @@ import {
 import { connect } from '../api/mcp.js';
 import { resolveCredential } from '../domain/credential.js';
 import { say, style } from '../core/term.js';
+import { VERSION } from '../core/version.js';
 
 /**
  * The default command: a stdio server in front of the club's HTTP one.
@@ -35,7 +36,7 @@ export async function serve(config) {
   );
 
   const server = new Server(
-    { name: 'inite-club', version: '1.1.0' },
+    { name: 'inite-club', version: VERSION },
     { capabilities: { tools: {} } }
   );
 

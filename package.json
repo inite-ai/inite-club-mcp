@@ -42,6 +42,7 @@
   },
   "scripts": {
     "lint": "node --check bin/cli.mjs",
+    "test": "node --test test/*.test.js",
     "start": "node bin/cli.mjs"
   },
   "publishConfig": {
