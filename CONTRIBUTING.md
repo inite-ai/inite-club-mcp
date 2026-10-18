@@ -19,5 +19,4 @@ are still welcome as issues. Changes to sign-in, credential storage, the
 bridge or the package identity (red zones in AGENTS.md) start as an issue that
 a maintainer approves before code.
 
-Security problems: please don't open a public issue — ask a maintainer for a
-private channel.
+Security problems: please don't open a public issue — see [SECURITY.md](SECURITY.md).
