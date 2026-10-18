@@ -1,8 +1,9 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { CliError, EXIT } from '../core/errors.js';
+import { VERSION } from '../core/version.js';
 
-const CLIENT_INFO = { name: 'inite-club-mcp-cli', version: '1.1.0' };
+const CLIENT_INFO = { name: 'inite-club-mcp-cli', version: VERSION };
 
 /**
  * Connect to the club as an MCP client.
