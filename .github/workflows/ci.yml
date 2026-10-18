@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: Gates (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 18.17 is the `engines` floor; 20 is what the devcontainer uses.
+        node: ['18.17', '20']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+      # No lockfile is committed (it is git-ignored), so `npm ci` cannot run.
+      - run: npm install --no-audit --no-fund
+      - run: npm run lint
+      # Importing every command proves each module in src/ parses and resolves.
+      - run: node bin/cli.mjs --version
+      - run: node bin/cli.mjs --help
+
+  devcontainer:
+    name: Devcontainer builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
+        with:
+          push: never
+          runCmd: npm run lint && node bin/cli.mjs --version
