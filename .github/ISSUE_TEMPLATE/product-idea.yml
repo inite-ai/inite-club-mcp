@@ -1,0 +1,49 @@
+name: Product idea
+description: Something you want the INITE Club CLI, its MCP bridge, or the club's MCP tools to make possible. Plain words are fine.
+title: "idea: "
+labels: [idea]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        No engineering knowledge needed. If an AI agent helped you (`/contribute` or `/spec-idea`
+        in Claude Code, or "read AGENTS.md"), paste its spec at the bottom.
+        Never paste a token (`ic_ag_…`) or the contents of `~/.config/inite-club/credentials.json`.
+  - type: textarea
+    id: what
+    attributes:
+      label: What do you want to be possible?
+      placeholder: "e.g. `ask` remembers the last expert I asked, so a follow-up goes to the same agent"
+    validations:
+      required: true
+  - type: textarea
+    id: who
+    attributes:
+      label: Who is it for / why
+      placeholder: Who needs this, and what do they do today instead?
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: How would you know it works?
+      placeholder: The command you would run, and what you would expect to see.
+    validations:
+      required: true
+  - type: checkboxes
+    id: parts
+    attributes:
+      label: Which part does it touch?
+      description: Best guess; "not sure" is fine.
+      options:
+        - label: The CLI (ask, login, join, install, doctor, whoami)
+        - label: The stdio MCP bridge (what an editor connects through)
+        - label: The club's MCP tools themselves (server-side, not in this repo)
+        - label: Not sure
+  - type: textarea
+    id: spec
+    attributes:
+      label: Spec (if an agent wrote one)
+      description: Problem, user-visible behaviour, CLI surface change, files touched on the user's machine, risks, out of scope, zone.
+    validations:
+      required: false

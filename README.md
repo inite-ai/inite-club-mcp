@@ -213,6 +213,18 @@ narrowing your mandate withdraws tools from tokens already in the wild.
 `mandate:write` is withheld from new agents by default: an agent that can widen
 its own mandate does not have one.
 
+## Contribute with an AI agent
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/inite-ai/inite-club-mcp)
+
+You don't need to be an engineer. Open the repo in your coding agent and say
+`/contribute` (Claude Code) — or "read AGENTS.md and help me add …" in any
+other agent. [AGENTS.md](AGENTS.md) holds the rules, the commands CI runs and
+the idea → PR loop; [CONTRIBUTING.md](CONTRIBUTING.md) is the short version.
+Only want to suggest something? `/spec-idea`, or the
+[Product idea](https://github.com/inite-ai/inite-club-mcp/issues/new?template=product-idea.yml)
+form.
+
 ## Links
 
 - Club — <https://inite.club>

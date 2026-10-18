@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in inite-club-mcp does not work as the README says.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `inite-club-mcp doctor` usually explains "missing tools" — please run it first and paste
+        its output. Remove any token (`ic_ag_…`, `eyJ…`) before posting.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The command you ran and what it printed (stderr included). Redact tokens.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`inite-club-mcp doctor` output"
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Version and Node
+      placeholder: "`npx @inite/club-mcp --version` and `node --version`"
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: MCP client and OS (if it is about the bridge or install)
+      placeholder: e.g. Cursor 1.x on macOS
+    validations:
+      required: false
